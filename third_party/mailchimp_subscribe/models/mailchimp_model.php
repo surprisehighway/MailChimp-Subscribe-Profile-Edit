@@ -107,6 +107,48 @@ class Mailchimp_model extends CI_Model {
    */
   private $_sc_registration_member_categories = array();
 
+  /**
+   * Profile:Edit installed?
+   *
+   * @author  Surprise Highway <http://github.com/surprisehighway>
+   * @since   2.1.0
+   * @access  private
+   * @var     boolean
+   */
+  private $_profile_edit_installed = FALSE;
+
+  /**
+   * Profile:Edit fields
+   *
+   * @author  Surprise Highway <http://github.com/surprisehighway>
+   * @since   2.1.0
+   * @access  private
+   * @var     array
+   */
+  private $_profile_edit_member_fields = array();
+
+  /**
+   * Profile:Edit Settings
+   *
+   * @author  Surprise Highway <http://github.com/surprisehighway>
+   * @since   2.1.0
+   * @access  private
+   * @var     array
+   */
+  private $_profile_edit_settings = array();
+
+  /**
+   * Profile:Edit Categories
+   *
+   * @author  Surprise Highway <http://github.com/surprisehighway>
+   * @since   2.1.0
+   * @access  private
+   * @var     array
+   */
+  private $_profile_edit_member_categories = array();
+
+
+
   /* --------------------------------------------------------------
    * PUBLIC METHODS
    * ------------------------------------------------------------ */
@@ -143,6 +185,7 @@ class Mailchimp_model extends CI_Model {
     $this->_load_settings_from_db();
     $this->_zoo_visitor_installed = $this->_init_zoo_visitor();
     $this->_sc_registration_installed = $this->_init_sc_registration();
+    $this->_profile_edit_installed = $this->_init_profile_edit();
     $this->_load_member_fields_from_db();
 
     // OmniLog FTW!
@@ -1113,6 +1156,71 @@ class Mailchimp_model extends CI_Model {
   }
 
 
+  /**
+   * Check if Profile:Edit is installed.
+   *
+   * @author  Surprise Highway <http://github.com/surprisehighway>
+   * @since   2.1.0
+   * @access  private
+   * @return  void
+   */
+  private function _init_profile_edit()
+  {
+    $this->_ee->load->model('addons_model');
+    $this->_ee->load->model('channel_model');
+    $this->_ee->load->model('category_model');
+
+    if ( ! $this->_ee->addons_model->module_installed('Profile'))
+    {
+      return FALSE;
+    }
+
+    // this is not active record on purpose, leave it alone!
+    $query = $this->db->query('SELECT `settings` FROM '.$this->db->dbprefix('extensions').' WHERE class = \'Profile_ext\' LIMIT 1');
+
+    $this->_profile_edit_settings = @unserialize($query->row('settings'));
+
+    $profile_edit_channel = $this->_ee->channel_model->get_channel_info($this->_profile_edit_settings['channel_id']);
+
+    if ($profile_edit_channel->num_rows() > 0)
+    {
+      $row         = $profile_edit_channel->row();
+      $field_group = $row->field_group;
+      $cat_group   = $row->cat_group;
+
+      $profile_edit_fields = $this->_ee->channel_model->get_channel_fields($field_group);
+
+      if ($profile_edit_fields->num_rows() > 0)
+      {
+        $this->_profile_edit_member_fields = $profile_edit_fields->result();
+      }
+
+      // Get the categories, if any
+      $category_groups = $this->_ee->category_model->get_category_groups(explode('|', $cat_group));
+      if ($category_groups->num_rows() > 0) {
+
+        $members_cats = array();
+        foreach($category_groups->result() as $catgroup) {
+          $categories = $this->_ee->category_model->get_channel_categories($catgroup->group_id);
+          $members_cats[] = array(
+              'id'  => $catgroup->group_id,
+              'name'  => $catgroup->group_name,
+              'categories' => $categories->result_array()
+            );
+          // Get categories
+          $this->_profile_edit_member_categories = $members_cats;
+        }
+      }
+
+      return TRUE;
+
+    }
+
+    return FALSE;
+
+  }
+
+
 
 
   /**
@@ -1157,17 +1265,28 @@ class Mailchimp_model extends CI_Model {
       )
     );
 
-    // Check if Zoo Visitor OR Safecracker Registration is installed and initialized.
-    if ($this->_zoo_visitor_installed === TRUE OR $this->_sc_registration_installed === TRUE)
+    // Check if Zoo Visitor, Safecracker Registration, or Profile:Edit is installed and initialized.
+    if ($this->_zoo_visitor_installed === TRUE OR
+        $this->_sc_registration_installed === TRUE OR
+        $this->_profile_edit_installed === TRUE)
     {
-      // If both are installed, force to use Zoo Visitor (Why? Because it's Belgian!)
+      // Zoo Visitor
       if ($this->_zoo_visitor_installed === TRUE)
       {
         $member_channel_fields     = $this->_zoo_visitor_member_fields;
         $member_channel_categories = $this->_zoo_visitor_member_categories;
-      } else {
+      }
+      // Safecracker Registration
+      elseif ($this->_sc_registration_installed)
+      {
         $member_channel_fields     = $this->_sc_registration_member_fields;
         $member_channel_categories = $this->_sc_registration_member_categories;
+      }
+      // Last but not least Profile:Edit
+      else
+      {
+        $member_channel_fields     = $this->_profile_edit_member_fields;
+        $member_channel_categories = $this->_profile_edit_member_categories;
       }
 
       // Loop on every custom fields
@@ -1225,7 +1344,7 @@ class Mailchimp_model extends CI_Model {
     }
     else
     {
-      // If Zoo Visitor or Safecracker Registration are not installed, we use the normal way...
+      // If Zoo Visitor, Safecracker Registration, or Profile:Edit are not installed, we use the normal way...
       $db_member_fields = $this->_ee->db
         ->select('m_field_id, m_field_label, m_field_type, m_field_list_items')
         ->get('member_fields');
@@ -1447,7 +1566,7 @@ class Mailchimp_model extends CI_Model {
        * Passing a blank $merge_vars array will fail. We should either pass an
        * empty string or array('').
        */
-
+      
       if ( ! $merge_vars)
       {
         $merge_vars = '';
