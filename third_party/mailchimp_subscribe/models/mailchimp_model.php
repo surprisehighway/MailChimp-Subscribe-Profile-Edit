@@ -36,77 +36,6 @@ class Mailchimp_model extends CI_Model {
   private $_theme_folder_url = '';
   private $_view_settings   = NULL;
 
-
-  /**
-   * Zoo Visitors installed?
-   *
-   * @author  Pierre-Vincent Ledoux <addons@pvledoux.be>
-   * @since   2.1.0
-   * @access  private
-   * @var     boolean
-   */
-  private $_zoo_visitor_installed = FALSE;
-
-  /**
-   * Zoo Visitors settings
-   *
-   * @author  Pierre-Vincent Ledoux <addons@pvledoux.be>
-   * @since   2.1.0
-   * @access  private
-   * @var     array
-   */
-  private $_zoo_visitor_settings = array();
-
-  /**
-   * Zoo Visitors fields
-   *
-   * @author  Pierre-Vincent Ledoux <addons@pvledoux.be>
-   * @since   2.1.0
-   * @access  private
-   * @var     array
-   */
-  private $_zoo_visitor_member_fields = array();
-
-  /**
-   * Safecracker Registration installed?
-   *
-   * @author  Pierre-Vincent Ledoux <addons@pvledoux.be>
-   * @since   2.1.0
-   * @access  private
-   * @var     boolean
-   */
-  private $_sc_registration_installed = FALSE;
-
-  /**
-   * Safecracker Registration fields
-   *
-   * @author  Pierre-Vincent Ledoux <addons@pvledoux.be>
-   * @since   2.1.0
-   * @access  private
-   * @var     array
-   */
-  private $_sc_registration_member_fields = array();
-
-  /**
-   * Safecracker Registration settings
-   *
-   * @author  Pierre-Vincent Ledoux <addons@pvledoux.be>
-   * @since   2.1.0
-   * @access  private
-   * @var     array
-   */
-  private $_sc_registration_settings = array();
-
-  /**
-   * Safecracker Registration categories
-   *
-   * @author  Pierre-Vincent Ledoux <addons@pvledoux.be>
-   * @since   2.1.0
-   * @access  private
-   * @var     array
-   */
-  private $_sc_registration_member_categories = array();
-
   /**
    * Profile:Edit installed?
    *
@@ -183,8 +112,6 @@ class Mailchimp_model extends CI_Model {
     }
 
     $this->_load_settings_from_db();
-    $this->_zoo_visitor_installed = $this->_init_zoo_visitor();
-    $this->_sc_registration_installed = $this->_init_sc_registration();
     $this->_profile_edit_installed = $this->_init_profile_edit();
     $this->_load_member_fields_from_db();
 
@@ -206,64 +133,14 @@ class Mailchimp_model extends CI_Model {
   {
     $hooks = array(
       array(
-        'hook'    => 'cp_members_member_create',
-        'method'  => 'cp_members_member_create',
-        'priority'  => 10
+        'hook'    => 'profile_register_end',
+        'method'  => 'profile_register_end',
+        'priority'  => 1000
       ),
       array(
-        'hook'    => 'cp_members_validate_members',
-        'method'  => 'cp_members_validate_members',
-        'priority'  => 10
-      ),
-      array(
-        'hook'    => 'member_member_register',
-        'method'  => 'member_member_register',
-        'priority'  => 10
-      ),
-      array(
-        'hook'    => 'member_register_validate_members',
-        'method'  => 'member_register_validate_members',
-        'priority'  => 10
-      ),
-      array(
-        'hook'    => 'user_edit_end',
-        'method'  => 'user_edit_end',
-        'priority'  => 10
-      ),
-      array(
-        'hook'    => 'user_register_end',
-        'method'  => 'user_register_end',
-        'priority'  => 10
-      ),
-      array(
-        'hook'    => 'zoo_visitor_cp_register_end',
-        'method'  => 'zoo_visitor_cp_register_end',
-        'priority'  => 10
-      ),
-      array(
-        'hook'    => 'zoo_visitor_cp_update_end',
-        'method'  => 'zoo_visitor_cp_update_end',
-        'priority'  => 10
-      ),
-      array(
-        'hook'    => 'zoo_visitor_register_end',
-        'method'  => 'zoo_visitor_register_end',
-        'priority'  => 10
-      ),
-      array(
-        'hook'    => 'zoo_visitor_update_end',
-        'method'  => 'zoo_visitor_update_end',
-        'priority'  => 10
-      ),
-      array(
-        'hook'    => 'safecracker_registration_register_member',
-        'method'  => 'safecracker_registration_register_member',
-        'priority'  => 10
-      ),
-      array(
-        'hook'    => 'safecracker_registration_edit_member',
-        'method'  => 'safecracker_registration_edit_member',
-        'priority'  => 10
+        'hook'    => 'profile_edit_end',
+        'method'  => 'profile_edit_end',
+        'priority'  => 1000
       )
     );
 
@@ -367,42 +244,35 @@ class Mailchimp_model extends CI_Model {
    */
   public function get_members(Array $criteria = array())
   {
+
     foreach ($criteria AS $key => $val)
     {
       is_array($val)
-        ? $this->_ee->db->where_in('members.' .$key, $val)
-        : $this->_ee->db->where('members.' .$key, $val);
+      ? $this->_ee->db->where_in('members.' .$key, $val)
+      : $this->_ee->db->where('members.' .$key, $val);
     }
-
+    
     /**
-     * If Zoo Visitor is installed, get fields of the channel
+     * If Profile:Edit is installed, get fields of the channel
      *
      * @author  Pierre-Vincent Ledoux <addons@pvledoux.be>
      * @since   2.1.0
      */
 
-    if ($this->_zoo_visitor_installed === TRUE OR $this->_sc_registration_installed === TRUE)
+    if ($this->_profile_edit_installed !== TRUE)
     {
-      if ($this->_zoo_visitor_installed === TRUE)
-      {
-        $member_channel_fields = $this->_zoo_visitor_member_fields;
-        $channel_id = $this->_zoo_visitor_settings['member_channel_id'];
-      } else {
-        $member_channel_fields = $this->_sc_registration_member_fields;
-        $channel_id = $this->_sc_registration_settings['member_channel_id'];
-      }
+      return FALSE;
+    }
+      
+      $member_channel_fields = $this->_profile_edit_member_fields;
+      $channel_id = $this->_profile_edit_settings['channel_id'];
 
       $field_ids = array();
 
       foreach($member_channel_fields as $channel_field)
       {
-        // We skip the ZV fieldtype
-        if ($channel_field->field_type !== 'zoo_visitor')
-        {
-          $field_ids[] = 'exp_channel_data.field_id_' .$channel_field->field_id;
-        }
+        $field_ids[] = 'exp_channel_data.field_id_' .$channel_field->field_id;
       }
-
 
       // Generate a list of field_id
       $fields = implode(',', $field_ids);
@@ -416,6 +286,7 @@ class Mailchimp_model extends CI_Model {
       $this->_ee->db->where('exp_channel_titles.channel_id', $channel_id);
 
       $db_members = $this->_ee->db->get('members')->result_array();
+
       foreach ($db_members as $key => $member)
       {
         // Get Member categories
@@ -438,13 +309,7 @@ class Mailchimp_model extends CI_Model {
           $db_members[$key]['cat_group_id_'.$cat['group_id']] = substr($str_cats, 0, -1); // remove last comma
         }
       }
-    }
-    else
-    {
-      $this->_ee->db->join('member_data',
-      'member_data.member_id = members.member_id', 'inner');
-      $db_members = $this->_ee->db->get('members')->result_array();
-    }
+
     return $db_members;
   }
 
@@ -694,40 +559,6 @@ class Mailchimp_model extends CI_Model {
     )
     {
       return FALSE;
-    }
-
-    // Update to version 2.1.0.
-    if (version_compare($current_version, '2.1.0', '<'))
-    {
-      // Register the Zoo Visitor hook handlers.
-      $hooks = array(
-        array(
-          'hook'      => 'zoo_visitor_cp_register_end',
-          'method'    => 'zoo_visitor_cp_register_end',
-          'priority'  => 10
-        ),
-        array(
-          'hook'      => 'zoo_visitor_cp_update_end',
-          'method'    => 'zoo_visitor_cp_update_end',
-          'priority'  => 10
-        ),
-        array(
-          'hook'      => 'zoo_visitor_register_end',
-          'method'    => 'zoo_visitor_register_end',
-          'priority'  => 10
-        ),
-        array(
-          'hook'      => 'zoo_visitor_update_end',
-          'method'    => 'zoo_visitor_update_end',
-          'priority'  => 10
-        )
-      );
-
-      $this->_register_hooks($hooks);
-
-      // Drop the MailChimp Subscribe error log table.
-      $this->_ee->load->dbforge();
-      $this->_ee->dbforge->drop_table('mailchimp_subscribe_error_log');
     }
 
     // Update the version number.
@@ -991,172 +822,6 @@ class Mailchimp_model extends CI_Model {
   }
 
   /**
-   * Check if Zoo Visitor is installed. If it is, retrieve the Zoo Vistor
-   * settings.
-   *
-   * @author  Pierre-Vincent Ledoux <addons@pvledoux.be>
-   * @author  Stephen Lewis
-   * @since   2.1.0
-   * @access  private
-   * @return  void
-   */
-  private function _init_zoo_visitor()
-  {
-    $this->_ee->load->model('addons_model');
-    $this->_ee->load->model('channel_model');
-    $this->_ee->load->model('category_model');
-
-
-    if ( ! $this->_ee->addons_model->module_installed('Zoo_visitor'))
-    {
-      return FALSE;
-    }
-
-    $zoo_settings_query = $this->_ee->db
-      ->select('var, var_value')
-      ->get_where('zoo_visitor_settings',
-        array('site_id' => $this->_ee->config->item('site_id')));
-
-    if ( ! $zoo_settings_query->num_rows())
-    {
-      return FALSE;
-    }
-
-    foreach ($zoo_settings_query->result() as $setting)
-    {
-      $this->_zoo_visitor_settings[$setting->var] = $setting->var_value;
-    }
-
-    // Ensure that settings are correct
-    if ( ! isset($this->_zoo_visitor_settings['member_channel_id']))
-    {
-      return FALSE;
-    }
-
-    $zoo_channel = $this->_ee->channel_model->get_channel_info(
-      $this->_zoo_visitor_settings['member_channel_id']);
-
-    if ($zoo_channel->num_rows() > 0)
-    {
-      $row         = $zoo_channel->row();
-      $field_group = $row->field_group;
-      $cat_group   = $row->cat_group;
-
-      $member_channel_fields = $this->_ee->channel_model->get_channel_fields(
-        $field_group);
-
-      if ($member_channel_fields->num_rows() > 0)
-      {
-        $this->_zoo_visitor_member_fields = $member_channel_fields->result();
-      }
-
-      // Get the categories, if any
-      $category_groups = $this->_ee->category_model->get_category_groups(explode('|', $cat_group));
-      if ($category_groups->num_rows() > 0) {
-
-        $members_cats = array();
-        foreach($category_groups->result() as $catgroup) {
-          $categories = $this->_ee->category_model->get_channel_categories($catgroup->group_id);
-          $members_cats[] = array(
-              'id'  => $catgroup->group_id,
-              'name'  => $catgroup->group_name,
-              'categories' => $categories->result_array()
-            );
-          // Get categories
-          $this->_zoo_visitor_member_categories = $members_cats;
-        }
-      }
-
-      return TRUE;
-
-    }
-
-    return FALSE;
-  }
-
-
-  /**
-   * Check if Safecracker Registration is installed.
-   *
-   * @author  Pierre-Vincent Ledoux <addons@pvledoux.be>
-   * @author  Stephen Lewis
-   * @since   2.1.0
-   * @access  private
-   * @return  void
-   */
-  private function _init_sc_registration()
-  {
-    $this->_ee->load->model('addons_model');
-    $this->_ee->load->model('channel_model');
-    $this->_ee->load->model('category_model');
-
-    if ( ! $this->_ee->addons_model->module_installed('Safecracker_registration'))
-    {
-      return FALSE;
-    }
-    // We can't know in which channel it saves the member data,
-    // but, WE NEED IT, damned! So, let's get it from the config.
-    if ( $this->_ee->config->item('safecracker_registration_channel_name') )
-    {
-      $member_channel = $this->_ee->db->select('channel_id')->from('channels')
-                                      ->where('channel_name', $this->_ee->config->item('safecracker_registration_channel_name'))
-                                      ->get();
-      if ($member_channel->num_rows() > 0)
-      {
-        $row = $member_channel->row();
-        $this->_sc_registration_settings['member_channel_id'] = $row->channel_id;
-      } else
-      {
-        $this->log_error('Could not find the channel named: ' . $this->_ee->config->item('safecracker_registration_channel_name') );
-        return FALSE;
-      }
-    }
-    else
-    {
-      $this->log_error('Safecracker Registration is installed but no channel is specified in the config. Please add $config[\'safecracker_registration_channel_name\'] in your config.php.');
-      return FALSE;
-    }
-    $sc_registration_channel = $this->_ee->channel_model->get_channel_info($this->_sc_registration_settings['member_channel_id']);
-
-    if ($sc_registration_channel->num_rows() > 0)
-    {
-      $row         = $sc_registration_channel->row();
-      $field_group = $row->field_group;
-      $cat_group   = $row->cat_group;
-
-      $sc_registration_fields = $this->_ee->channel_model->get_channel_fields($field_group);
-
-      if ($sc_registration_fields->num_rows() > 0)
-      {
-        $this->_sc_registration_member_fields = $sc_registration_fields->result();
-      }
-
-      // Get the categories, if any
-      $category_groups = $this->_ee->category_model->get_category_groups(explode('|', $cat_group));
-      if ($category_groups->num_rows() > 0) {
-
-        $members_cats = array();
-        foreach($category_groups->result() as $catgroup) {
-          $categories = $this->_ee->category_model->get_channel_categories($catgroup->group_id);
-          $members_cats[] = array(
-              'id'  => $catgroup->group_id,
-              'name'  => $catgroup->group_name,
-              'categories' => $categories->result_array()
-            );
-          // Get categories
-          $this->_sc_registration_member_categories = $members_cats;
-        }
-      }
-
-      return TRUE;
-
-    }
-
-    return FALSE;
-  }
-
-
-  /**
    * Check if Profile:Edit is installed.
    *
    * @author  Surprise Highway <http://github.com/surprisehighway>
@@ -1220,9 +885,6 @@ class Mailchimp_model extends CI_Model {
 
   }
 
-
-
-
   /**
    * Loads the member fields from the database.
    *
@@ -1231,160 +893,66 @@ class Mailchimp_model extends CI_Model {
    */
   private function _load_member_fields_from_db()
   {
-    /**
-     * The default ExpressionEngine member fields are
-     * hard-coded. Not ideal, but we roll with it.
-     */
 
     $this->_ee->lang->loadfile('member');
 
-    $member_fields = array(
-      'location' => array(
-        'id'      => 'location',
-        'label'   => lang('mbr_location'),
-        'options' => array(),
-        'type'    => 'text'
-      ),
-      'screen_name' => array(
-        'id'      => 'screen_name',
-        'label'   => lang('mbr_screen_name'),
-        'options' => array(),
-        'type'    => 'text'
-      ),
-      'url' => array(
-        'id'      => 'url',
-        'label'   => lang('mbr_url'),
-        'options' => array(),
-        'type'    => 'text'
-      ),
-      'username' => array(
-        'id'      => 'username',
-        'label'   => lang('mbr_username'),
-        'options' => array(),
-        'type'    => 'text'
-      )
-    );
+    $member_fields = array();
 
-    // Check if Zoo Visitor, Safecracker Registration, or Profile:Edit is installed and initialized.
-    if ($this->_zoo_visitor_installed === TRUE OR
-        $this->_sc_registration_installed === TRUE OR
-        $this->_profile_edit_installed === TRUE)
+    $member_channel_fields     = $this->_profile_edit_member_fields;
+    $member_channel_categories = $this->_profile_edit_member_categories;
+
+    // Loop on every custom fields
+    foreach($member_channel_fields as $channel_field)
     {
-      // Zoo Visitor
-      if ($this->_zoo_visitor_installed === TRUE)
+
+      if ($channel_field->field_type == 'select')
       {
-        $member_channel_fields     = $this->_zoo_visitor_member_fields;
-        $member_channel_categories = $this->_zoo_visitor_member_categories;
+        $options = array();
+        $raw_options = explode("\n", $channel_field->field_list_items);
+
+        foreach ($raw_options AS $key => $value)
+        {
+          $options[$value] = $value;
+        }
       }
-      // Safecracker Registration
-      elseif ($this->_sc_registration_installed)
-      {
-        $member_channel_fields     = $this->_sc_registration_member_fields;
-        $member_channel_categories = $this->_sc_registration_member_categories;
-      }
-      // Last but not least Profile:Edit
       else
       {
-        $member_channel_fields     = $this->_profile_edit_member_fields;
-        $member_channel_categories = $this->_profile_edit_member_categories;
+        $options = array();
       }
 
-      // Loop on every custom fields
-      foreach($member_channel_fields as $channel_field)
-      {
 
-        if ($channel_field->field_type == 'select')
-        {
-          $options = array();
-          $raw_options = explode("\n", $channel_field->field_list_items);
-
-          foreach ($raw_options AS $key => $value)
-          {
-            $options[$value] = $value;
-          }
-        }
-        else
-        {
-          $options = array();
-        }
-
-        // Skip zoo_visitor field, which is not used.
-        if ($channel_field->field_type !== 'zoo_visitor')
-        {
-          $member_fields['field_id_'.$channel_field->field_id] = array(
-            'id'      => 'field_id_'.$channel_field->field_id,
-            'label'   => $channel_field->field_label,
-            'options' => $options,
-            'type'    => $channel_field->field_type == 'select'
-              ? 'select' : 'text'
-          );
-
-        }
-      }
-
-      if (isset($member_channel_categories ) && count($member_channel_categories ) > 0) {
-        foreach($member_channel_categories as $member_category)
-        {
-
-            $options = array();
-            foreach ($member_category['categories'] as $key => $value)
-            {
-              $options[$value['cat_name']] = $value['cat_name'];
-            }
-
-            $member_fields['cat_group_id_'.$member_category['id']] = array(
-              'id'    => 'cat_group_id_'.$member_category['id'],
-              'label'   => $member_category['name'],
-              'options' => $options,
-              'type'    => 'select'
-            );
-        }
-      }
+      $member_fields['field_id_'.$channel_field->field_id] = array(
+        'id'      => 'field_id_'.$channel_field->field_id,
+        'label'   => $channel_field->field_label,
+        'options' => $options,
+        'type'    => $channel_field->field_type == 'select'
+          ? 'select' : 'text'
+      );
 
     }
-    else
+
+    if (isset($member_channel_categories ) && count($member_channel_categories ) > 0)
     {
-      // If Zoo Visitor, Safecracker Registration, or Profile:Edit are not installed, we use the normal way...
-      $db_member_fields = $this->_ee->db
-        ->select('m_field_id, m_field_label, m_field_type, m_field_list_items')
-        ->get('member_fields');
-
-      if ($db_member_fields->num_rows() > 0)
+      foreach($member_channel_categories as $member_category)
       {
-        foreach ($db_member_fields->result() AS $row)
-        {
-          if ($row->m_field_type == 'select')
-          {
-            /**
-             * Given the number of PHP array manipulation methods, I suspect
-             * there may be a more elegant way of achieving this goal. This
-             * will do for now though.
-             */
 
-            $options = array();
-            $raw_options = explode("\n", $row->m_field_list_items);
-
-            foreach ($raw_options AS $key => $value)
-            {
-              $options[$value] = $value;
-            }
-          }
-          else
+          $options = array();
+          foreach ($member_category['categories'] as $key => $value)
           {
-            $options = array();
+            $options[$value['cat_name']] = $value['cat_name'];
           }
 
-          $member_fields['m_field_id_' .$row->m_field_id] = array(
-            'id'      => 'm_field_id_' .$row->m_field_id,
-            'label'   => $row->m_field_label,
+          $member_fields['cat_group_id_'.$member_category['id']] = array(
+            'id'    => 'cat_group_id_'.$member_category['id'],
+            'label'   => $member_category['name'],
             'options' => $options,
-            'type'    => $row->m_field_type == 'select' ? 'select' : 'text'
+            'type'    => 'select'
           );
-        }
       }
     }
 
     $this->_member_fields = $member_fields;
+
   }
 
 
@@ -1456,10 +1024,9 @@ class Mailchimp_model extends CI_Model {
    * @param   bool    $update       Are we updating existing subscriptions?
    * @return  void
    */
-  private function _update_member_subscriptions($member_id = '',
-    $update = FALSE
-  )
+  private function _update_member_subscriptions($member_id = '', $update = FALSE)
   {
+
     // Check that we have a member ID.
     if ( ! $member_id)
     {
@@ -1566,7 +1133,7 @@ class Mailchimp_model extends CI_Model {
        * Passing a blank $merge_vars array will fail. We should either pass an
        * empty string or array('').
        */
-      
+
       if ( ! $merge_vars)
       {
         $merge_vars = '';

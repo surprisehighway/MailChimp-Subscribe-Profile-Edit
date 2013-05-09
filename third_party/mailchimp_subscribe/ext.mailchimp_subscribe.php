@@ -150,236 +150,41 @@ class Mailchimp_subscribe_ext {
     return $this->_ee->mailchimp_model->update_extension($current_version);
   }
 
-
-
   /* --------------------------------------------------------------
-   * HOOK HANDLERS
+   * PROFILE:EDIT HOOK HANDLERS
    * ------------------------------------------------------------ */
 
   /**
-   * Handles the cp_members_member_create hook.
+   * Handles the Profile:Edit profile_register_end hook.
    *
-   * @see     http://expressionengine.com/developers/extension_hooks/cp_members_member_create/
-   * @access  public
-   * @param   string    $member_id    The member ID.
-   * @param   array     $member_data  The member data.
-   * @return  void
-   */
-  public function cp_members_member_create($member_id = '',
-    $member_data = array()
-  )
-  {
-    $this->_ee->mailchimp_model->subscribe_member($member_id);
-  }
-
-
-  /**
-   * Handles the cp_members_validate_members hook.
-   *
-   * @see     http://expressionengine.com/developers/extension_hooks/cp_members_validate_members/
-   * @access  public
-   * @return  void
-   */
-  public function cp_members_validate_members()
-  {
-    if ($this->_ee->input->post('action') != 'activate'
-      OR ! is_array($this->_ee->input->post('toggle')))
-    {
-      return;
-    }
-
-    $member_ids = $this->_ee->input->post('toggle');
-
-    foreach ($member_ids AS $member_id)
-    {
-      $this->_ee->mailchimp_model->subscribe_member($member_id);
-    }
-  }
-
-
-  /**
-   * Handles the member_member_register hook.
-   *
-   * @access  public
-   * @param   array   $data   An array of data about the new member.
-   * @return  void
-   */
-  public function member_member_register(Array $data = array())
-  {
-    if ((strtolower($this->_ee->config->item('req_mbr_activation')) !== 'none')
-      OR ( ! isset($data['username']))
-      OR ( ! isset($data['email']))
-      OR ( ! isset($data['join_date'])))
-    {
-      return FALSE;
-    }
-
-    $members = $this->_ee->mailchimp_model->get_members(array(
-      'username'  => $data['username'],
-      'email'     => $data['email'],
-      'join_date' => $data['join_date']
-    ));
-
-    if (count($members) === 1)
-    {
-      $this->_ee->mailchimp_model->subscribe_member($members[0]['member_id']);
-    }
-  }
-
-
-  /**
-   * Handles the member_register_validate_members hook.
-   *
-   * @access  public
-   * @param   string    $member_id    The member ID.
-   * @return  void
-   */
-  public function member_register_validate_members($member_id = '')
-  {
-    if (strtolower($this->_ee->config->item('req_mbr_activation')) === 'email')
-    {
-      $this->_ee->mailchimp_model->subscribe_member($member_id);
-    }
-  }
-
-
-  /**
-   * Handles the User module user_edit_end hook.
-   *
-   * @access  public
-   * @param   string    $member_id        The member ID.
-   * @param   array     $member_data      Information about the member.
-   * @param   array     $custom_fields    Custom member fields.
-   * @return  bool
-   */
-  public function user_edit_end($member_id = '', $member_data = array(),
-    $custom_fields = array()
-  )
-  {
-    $this->_ee->mailchimp_model->update_member_subscriptions($member_id);
-    return TRUE;
-  }
-
-
-  /**
-   * Handles the User module user_register_end hook.
-   *
-   * @access  public
-   * @param   array     $userdata     User class object.
-   * @param   int       $member_id    The ID of the new member.
-   * @return  array
-   */
-  public function user_register_end($userdata = NULL, $member_id = '')
-  {
-    if ($member_id
-      && strtolower($this->_ee->config->item('req_mbr_activation')) === 'none'
-    )
-    {
-      $this->_ee->mailchimp_model->subscribe_member($member_id);
-    }
-
-    return $userdata;
-  }
-
-
-  /**
-   * Handles the Zoo Visitor module's zoo_visitor_cp_register_end hook.
-   *
+   * @author  Surprise Highway <http://github.com/surprisehighway>
    * @since   2.1.0
    * @access  public
-   * @param   array     $member_data    An array of member data.
    * @param   int       $member_id      The member ID.
+   * @param   array     $member_data    An array of member data.
    */
-  public function zoo_visitor_cp_register_end(Array $member_data, $member_id)
+
+  public function profile_register_end($member_id, Array $member_data)
   {
     $this->_ee->mailchimp_model->subscribe_member($member_id);
     return $member_data;
   }
 
-
   /**
-   * Handles the Zoo Visitor module's zoo_visitor_cp_update_end hook.
+   * Handles the Profile:Edit profile_edit_end hook.
    *
+   * @author  Surprise Highway <http://github.com/surprisehighway>
    * @since   2.1.0
    * @access  public
-   * @param   array     $member_data    An array of member data.
    * @param   int       $member_id      The member ID.
-   */
-  public function zoo_visitor_cp_update_end(Array $member_data, $member_id)
-  {
-    $this->_ee->mailchimp_model->update_member_subscriptions($member_id);
-    return $member_data;
-  }
-
-
-  /**
-   * Handles the Zoo Visitor module's zoo_visitor_register_end hook.
-   *
-   * @author  Pierre-Vincent Lexoux <addons@pvledoux.be>
-   * @author  Stephen Lewis
-   * @since   2.1.0
-   * @access  public
    * @param   array     $member_data    An array of member data.
-   * @param   int       $member_id      The member ID.
    */
-  public function zoo_visitor_register_end(Array $member_data, $member_id)
+
+  public function profile_edit_end($member_id, Array $member_data)
   {
     $this->_ee->mailchimp_model->subscribe_member($member_id);
     return $member_data;
   }
-
-
-  /**
-   * Handles the Zoo Visitor module's zoo_visitor_update_end hook.
-   *
-   * @author  Pierre-Vincent Lexoux <addons@pvledoux.be>
-   * @author  Stephen Lewis
-   * @since   2.1.0
-   * @access  public
-   * @param   array     $member_data    An array of member data.
-   * @param   int       $member_id      The member ID.
-   */
-  public function zoo_visitor_update_end(Array $member_data, $member_id)
-  {
-    $this->_ee->mailchimp_model->update_member_subscriptions($member_id);
-    return $member_data;
-  }
-
-
-  /**
-   * Handles the Safecracker Registration module's safecracker_registration_register_member hook.
-   *
-   * @author  Pierre-Vincent Lexoux <addons@pvledoux.be>
-   * @author  Stephen Lewis
-   * @since   2.1.0
-   * @access  public
-   * @param   array     $member_data    An array of member data.
-   * @param   int       $member_id      The member ID.
-   */
-  public function safecracker_registration_register_member(Array $member_data, $member_id)
-  {
-    $this->_ee->mailchimp_model->subscribe_member($member_id);
-    return $member_data;
-  }
-
-
-  /**
-   * Handles the Safecracker Registration module's safecracker_registration_edit_member hook.
-   *
-   * @author  Pierre-Vincent Lexoux <addons@pvledoux.be>
-   * @author  Stephen Lewis
-   * @since   2.1.0
-   * @access  public
-   * @param   array     $member_data    An array of member data.
-   * @param   int       $member_id      The member ID.
-   */
-  public function safecracker_registration_edit_member(Array $member_data, $member_id)
-  {
-    $this->_ee->mailchimp_model->update_member_subscriptions($member_id);
-    return $member_data;
-  }
-
-
 
   /* --------------------------------------------------------------
    * PRIVATE METHODS
