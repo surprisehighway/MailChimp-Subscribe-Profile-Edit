@@ -1,12 +1,13 @@
 <?php if ( ! defined('BASEPATH')) exit('Invalid file request');
 
 /**
- * Handles all the API and database communication for MailChimp Subscribe.
+ * Handles all the API and database communication for MailChimp Subscribe with Profile:Edit.
  *
- * @author    Stephen Lewis <addons@experienceinternet.co.uk>
- * @link      http://experienceinternet.co.uk/software/mailchimp-subscribe/
- * @package   MailChimp Subscribe
- * @version   2.1.0
+ * @author    Surprise Highway
+ * @author    Stephen Lewis <https://github.com/experience/mailchimp_subscribe.ee_addon>
+ * @link      https://github.com/surprisehighway/mailchimp_subscribe.ee_addon
+ * @package   MailChimp_subscribe
+ * @version   1.0
  */
 
 require_once PATH_THIRD .'mailchimp_subscribe/library/MCAPI.class.php';
@@ -141,6 +142,11 @@ class Mailchimp_model extends CI_Model {
         'hook'    => 'profile_edit_end',
         'method'  => 'profile_edit_end',
         'priority'  => 1000
+      ),
+      array(
+        'hook'    => 'member_register_validate_members',
+        'method'  => 'member_register_validate_members',
+        'priority'=> 10 
       )
     );
 
@@ -254,8 +260,7 @@ class Mailchimp_model extends CI_Model {
     
     /**
      * If Profile:Edit is installed, get fields of the channel
-     *
-     * @author  Pierre-Vincent Ledoux <addons@pvledoux.be>
+     * @author  Surprise Highway <http://github.com/surprisehighway>
      * @since   2.1.0
      */
 
@@ -1107,6 +1112,7 @@ class Mailchimp_model extends CI_Model {
           $merge_vars[$val->tag] = $member[$val->member_field_id];
         }
       }
+
       // Interest groups.
       $groupings = array();
 

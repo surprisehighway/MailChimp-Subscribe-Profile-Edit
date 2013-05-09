@@ -1,12 +1,21 @@
 <?php if ( ! defined('BASEPATH')) exit('Invalid file request');
 
 /**
- * Effortlessly add members of your ExpressionEngine site to your MailChimp
+ * 
+ * Mailchimp Subscribe Profile:Edit Edition
+ * NOTE: This version of Mailchimp Subscribe only works with the Profile:Edit addon
+ * This was forked from the original Mailchimp Subscribe found here: https://github.com/experience/mailchimp_subscribe.ee_addon
+ *
+ * Effortlessly add Profile:Edit members of your ExpressionEngine site to your MailChimp
  * mailing lists.
  *
- * @author    Stephen Lewis <addons@experienceinternet.co.uk>
- * @link      http://experienceinternet.co.uk/software/mailchimp-subscribe/
+ * @author    Surprise Highway
+ * @author    Stephen Lewis <https://github.com/experience/mailchimp_subscribe.ee_addon>
+ * @link      https://github.com/surprisehighway/mailchimp_subscribe.ee_addon
  * @package   MailChimp_subscribe
+ *
+ * Special Thanks to Stephen Lewis
+ *
  */
 
 class Mailchimp_subscribe_ext {
@@ -48,8 +57,8 @@ class Mailchimp_subscribe_ext {
     $this->description = 'Effortlessly add members of your ExpressionEngine'
       .' site to your MailChimp mailing lists.';
 
-    $this->docs_url       = 'http://experienceinternet.co.uk/software/mailchimp-subscribe/';
-    $this->name           = 'MailChimp Subscribe';
+    $this->docs_url       = 'https://github.com/surprisehighway/mailchimp_subscribe.ee_addon';
+    $this->name           = 'MailChimp Subscribe - Profile:Edit Edition';
     $this->settings       = array();
     $this->settings_exist = 'y';
     $this->version        = $this->_ee->mailchimp_model->get_version();
@@ -182,8 +191,21 @@ class Mailchimp_subscribe_ext {
 
   public function profile_edit_end($member_id, Array $member_data)
   {
-    $this->_ee->mailchimp_model->subscribe_member($member_id);
+    $this->_ee->mailchimp_model->update_member_subscriptions($member_id);
     return $member_data;
+  }
+
+  /**
+   * Handles the ExpressionEngine self validate member_register_validate_members hook.
+   *
+   * @author  Surprise Highway <http://github.com/surprisehighway>
+   * @since   2.1.0
+   * @access  public
+   * @param   int       $member_id      The member ID.
+   */
+  public function member_register_validate_members($member_id)
+  {
+    $this->_ee->mailchimp_model->subscribe_member($member_id);
   }
 
   /* --------------------------------------------------------------
