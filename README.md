@@ -1,4 +1,4 @@
-## Mailchimp Subscribe Profile:Edit Edition
+## MailChimp Subscribe Profile:Edit Edition
 
 This version of Mailchimp Subscribe only works with Profile:Edit installed. This version of MailChimp Subscribe uses channel fields instead of member fields. Supports member registration, editing a profile, and members self validating via email.
 
