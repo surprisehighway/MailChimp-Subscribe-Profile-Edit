@@ -1,5 +1,11 @@
 ## MailChimp Subscribe Profile:Edit Edition
 
+### Requirements
+
+This will only work with *Profile:Edit v1.0.9* and above.
+
+Not guaranteed to work on versions of ExpressionEngine lower than v2.5.3
+
 This version of Mailchimp Subscribe only works with Profile:Edit installed. This version of MailChimp Subscribe uses channel fields instead of member fields. Supports member registration, editing a profile, and members self validating via email.
 
 Originally forked from [Stephen Lewis's MailChimp Subscribe][fork_src]
