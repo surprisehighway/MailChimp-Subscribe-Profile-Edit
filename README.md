@@ -3,8 +3,11 @@
 ### Requirements
 
 **Profile:Edit v1.0.9** or greater.
-
 **ExpressionEngine 2.5.3** or greater.
+
+## Overview
+
+Automatically add new members who register via Profile:Edit addon to MailChimp mailing lists.
 
 This version of Mailchimp Subscribe only works with Profile:Edit installed. This version of MailChimp Subscribe uses channel fields instead of member fields. Supports member registration, editing a profile, and members self validating via email.
 
@@ -30,7 +33,3 @@ Check out the wiki for [installation and usage instructions][wiki]
 [pe_hook1]: http://mightybigrobot.com/docs/profile-edit/#profile_register_end "profile_register_end"
 [pe_hook2]: http://mightybigrobot.com/docs/profile-edit/#profile_edit_end "profile_edit_end"
 [ee_hook1]: http://ellislab.com/expressionengine/user-guide/development/extension_hooks/module/member_register/#id4 "member_register_validate_members"
-
-## Overview
-
-Automatically add new members who register via Profile:Edit addon to MailChimp mailing lists.
