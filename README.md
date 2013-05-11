@@ -2,7 +2,7 @@
 
 ### Requirements
 
-**Profile:Edit v1.0.9** or greater.
+**Profile:Edit 1.0.9** or greater.
 **ExpressionEngine 2.5.3** or greater.
 
 ## Overview
